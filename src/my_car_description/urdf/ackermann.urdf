@@ -1,0 +1,775 @@
+<?xml version="1.0"?>
+
+<robot name="my_car_ackermann">
+
+  <!--
+    ROS 座標：
+    X：車頭方向
+    Y：車體左方
+    Z：車體上方
+
+    車體尺寸：
+    長度：0.50 m
+    寬度：0.30 m
+    高度：0.12 m
+
+    軸距：0.35 m
+    輪距：0.26 m
+    輪子半徑：0.065 m
+    輪子寬度：0.04 m
+
+    前輪位置：X =  0.175 m
+    後輪位置：X = -0.175 m
+    左輪位置：Y =  0.13 m
+    右輪位置：Y = -0.13 m
+  -->
+
+
+  <!-- ================================================= -->
+  <!-- 材質 -->
+  <!-- ================================================= -->
+
+  <material name="body_blue">
+    <color rgba="0.10 0.30 0.80 1.0"/>
+  </material>
+
+  <material name="wheel_black">
+    <color rgba="0.03 0.03 0.03 1.0"/>
+  </material>
+
+  <material name="axle_gray">
+    <color rgba="0.35 0.35 0.35 1.0"/>
+  </material>
+
+  <material name="steering_red">
+    <color rgba="0.80 0.15 0.15 1.0"/>
+  </material>
+
+  <material name="sensor_gray">
+    <color rgba="0.55 0.55 0.55 1.0"/>
+  </material>
+
+
+  <!-- ================================================= -->
+  <!-- 地面基準 -->
+  <!-- ================================================= -->
+
+  <link name="base_footprint"/>
+
+  <joint name="base_footprint_joint" type="fixed">
+    <parent link="base_footprint"/>
+    <child link="base_link"/>
+
+    <!-- base_link 位於車體中心 -->
+    <origin xyz="0 0 0.10" rpy="0 0 0"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 車體 -->
+  <!-- ================================================= -->
+
+  <link name="base_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.50 0.30 0.12"/>
+      </geometry>
+
+      <material name="body_blue"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.50 0.30 0.12"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <mass value="5.0"/>
+
+      <inertia
+        ixx="0.0435"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.1102"
+        iyz="0.0"
+        izz="0.1417"/>
+    </inertial>
+
+  </link>
+
+
+  <!-- ================================================= -->
+  <!-- 前軸 -->
+  <!-- ================================================= -->
+
+  <link name="front_axle_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.26 0.025"/>
+      </geometry>
+
+      <material name="axle_gray"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.26 0.025"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <mass value="0.30"/>
+
+      <inertia
+        ixx="0.00170"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.00005"
+        iyz="0.0"
+        izz="0.00170"/>
+    </inertial>
+
+  </link>
+
+  <joint name="front_axle_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="front_axle_link"/>
+
+    <!-- 輪心距離地面 0.065 m，base_link 高度 0.10 m -->
+    <origin xyz="0.175 0 -0.035" rpy="0 0 0"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 左前轉向節 -->
+  <!-- ================================================= -->
+
+  <link name="left_front_steering_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.025 0.07"/>
+      </geometry>
+
+      <material name="steering_red"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.025 0.07"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <mass value="0.15"/>
+
+      <inertia
+        ixx="0.00007"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.00008"
+        iyz="0.0"
+        izz="0.00003"/>
+    </inertial>
+
+  </link>
+
+  <joint name="left_front_steering_joint" type="revolute">
+    <parent link="front_axle_link"/>
+    <child link="left_front_steering_link"/>
+
+    <origin xyz="0 0.13 0" rpy="0 0 0"/>
+
+    <!-- 沿 Z 軸左右轉向 -->
+    <axis xyz="0 0 1"/>
+
+    <!-- 約正負 37 度 -->
+    <limit
+      lower="-0.65"
+      upper="0.65"
+      effort="30.0"
+      velocity="2.0"/>
+
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 左前輪 -->
+  <!-- ================================================= -->
+
+  <link name="left_front_wheel_link">
+
+    <visual>
+      <!-- cylinder 軸從 Z 轉成 Y -->
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+
+      <material name="wheel_black"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <mass value="0.30"/>
+
+      <inertia
+        ixx="0.000357"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.000634"
+        iyz="0.0"
+        izz="0.000357"/>
+    </inertial>
+
+  </link>
+
+  <joint name="left_front_wheel_joint" type="continuous">
+    <parent link="left_front_steering_link"/>
+    <child link="left_front_wheel_link"/>
+
+    <!-- 輪子向車體外側移動一點 -->
+    <origin xyz="0 0.02 0" rpy="0 0 0"/>
+
+    <!-- 輪軸沿 Y -->
+    <axis xyz="0 1 0"/>
+
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 右前轉向節 -->
+  <!-- ================================================= -->
+
+  <link name="right_front_steering_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.025 0.07"/>
+      </geometry>
+
+      <material name="steering_red"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.025 0.07"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <mass value="0.15"/>
+
+      <inertia
+        ixx="0.00007"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.00008"
+        iyz="0.0"
+        izz="0.00003"/>
+    </inertial>
+
+  </link>
+
+  <joint name="right_front_steering_joint" type="revolute">
+    <parent link="front_axle_link"/>
+    <child link="right_front_steering_link"/>
+
+    <origin xyz="0 -0.13 0" rpy="0 0 0"/>
+
+    <axis xyz="0 0 1"/>
+
+    <limit
+      lower="-0.65"
+      upper="0.65"
+      effort="30.0"
+      velocity="2.0"/>
+
+    <dynamics damping="0.5" friction="0.1"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 右前輪 -->
+  <!-- ================================================= -->
+
+  <link name="right_front_wheel_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+
+      <material name="wheel_black"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <mass value="0.30"/>
+
+      <inertia
+        ixx="0.000357"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.000634"
+        iyz="0.0"
+        izz="0.000357"/>
+    </inertial>
+
+  </link>
+
+  <joint name="right_front_wheel_joint" type="continuous">
+    <parent link="right_front_steering_link"/>
+    <child link="right_front_wheel_link"/>
+
+    <origin xyz="0 -0.02 0" rpy="0 0 0"/>
+
+    <axis xyz="0 1 0"/>
+
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 後軸 -->
+  <!-- ================================================= -->
+
+  <link name="rear_axle_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.26 0.025"/>
+      </geometry>
+
+      <material name="axle_gray"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.035 0.26 0.025"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <mass value="0.30"/>
+
+      <inertia
+        ixx="0.00170"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.00005"
+        iyz="0.0"
+        izz="0.00170"/>
+    </inertial>
+
+  </link>
+
+  <joint name="rear_axle_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="rear_axle_link"/>
+
+    <origin xyz="-0.175 0 -0.035" rpy="0 0 0"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 左後驅動輪 -->
+  <!-- ================================================= -->
+
+  <link name="left_rear_wheel_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+
+      <material name="wheel_black"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <mass value="0.30"/>
+
+      <inertia
+        ixx="0.000357"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.000634"
+        iyz="0.0"
+        izz="0.000357"/>
+    </inertial>
+
+  </link>
+
+  <joint name="left_rear_wheel_joint" type="continuous">
+    <parent link="rear_axle_link"/>
+    <child link="left_rear_wheel_link"/>
+
+    <origin xyz="0 0.15 0" rpy="0 0 0"/>
+
+    <axis xyz="0 1 0"/>
+
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+
+  <!-- ================================================= -->
+  <!-- 右後驅動輪 -->
+  <!-- ================================================= -->
+
+  <link name="right_rear_wheel_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+
+      <material name="wheel_black"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.065" length="0.04"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="1.5708 0 0"/>
+
+      <mass value="0.30"/>
+
+      <inertia
+        ixx="0.000357"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.000634"
+        iyz="0.0"
+        izz="0.000357"/>
+    </inertial>
+
+  </link>
+
+  <joint name="right_rear_wheel_joint" type="continuous">
+    <parent link="rear_axle_link"/>
+    <child link="right_rear_wheel_link"/>
+
+    <origin xyz="0 -0.15 0" rpy="0 0 0"/>
+
+    <axis xyz="0 1 0"/>
+
+    <dynamics damping="0.05" friction="0.01"/>
+  </joint>
+
+      <!-- ================================================= -->
+  <!-- 2D LiDAR -->
+  <!-- ================================================= -->
+
+  <link name="laser">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.04" length="0.04"/>
+      </geometry>
+
+      <material name="sensor_gray"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <cylinder radius="0.04" length="0.04"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <mass value="0.10"/>
+
+      <inertia
+        ixx="0.000053"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.000053"
+        iyz="0.0"
+        izz="0.000080"/>
+    </inertial>
+
+  </link>
+
+  <joint name="laser_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="laser"/>
+
+    <!-- 雷達位於車體上方中央偏前 -->
+    <origin xyz="0.10 0 0.10" rpy="0 0 0"/>
+  </joint>
+
+
+  <!-- Gazebo LiDAR 感測器 -->
+  <gazebo reference="laser">
+
+    <material>Gazebo/Grey</material>
+
+    <sensor type="ray" name="laser_sensor">
+
+      <pose>0 0 0 0 0 0</pose>
+
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10.0</update_rate>
+
+      <ray>
+
+        <scan>
+          <horizontal>
+            <!-- 720 點、360 度掃描 -->
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.1415926</min_angle>
+            <max_angle>3.1415926</max_angle>
+          </horizontal>
+        </scan>
+
+        <range>
+          <min>0.12</min>
+          <max>12.0</max>
+          <resolution>0.01</resolution>
+        </range>
+
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+
+      </ray>
+
+      <plugin name="gazebo_ros_laser"
+              filename="libgazebo_ros_laser.so">
+
+        <robotNamespace>/</robotNamespace>
+
+        <!-- ROS topic -->
+        <topicName>/scan</topicName>
+
+        <!-- LaserScan header.frame_id -->
+        <frameName>laser</frameName>
+
+        <updateRate>10.0</updateRate>
+        <gaussianNoise>0.01</gaussianNoise>
+
+      </plugin>
+
+    </sensor>
+
+  </gazebo>
+
+
+  <!-- ================================================= -->
+  <!-- 前方 RGB 相機 -->
+  <!-- ================================================= -->
+
+  <link name="camera_link">
+
+    <visual>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.05 0.06 0.04"/>
+      </geometry>
+
+      <material name="sensor_gray"/>
+    </visual>
+
+    <collision>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <geometry>
+        <box size="0.05 0.06 0.04"/>
+      </geometry>
+    </collision>
+
+    <inertial>
+      <origin xyz="0 0 0" rpy="0 0 0"/>
+
+      <mass value="0.10"/>
+
+      <inertia
+        ixx="0.000043"
+        ixy="0.0"
+        ixz="0.0"
+        iyy="0.000034"
+        iyz="0.0"
+        izz="0.000051"/>
+    </inertial>
+
+  </link>
+
+  <joint name="camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="camera_link"/>
+
+    <!-- 相機放在車頭上方，X 正方向為前方 -->
+    <origin xyz="0.20 0 0.10" rpy="0 0 0"/>
+  </joint>
+
+
+  <!-- ROS 相機光學座標 -->
+  <link name="camera_optical_frame"/>
+
+  <joint name="camera_optical_joint" type="fixed">
+    <parent link="camera_link"/>
+    <child link="camera_optical_frame"/>
+
+    <!--
+      Optical Frame：
+      Z 朝鏡頭前方
+      X 朝畫面右方
+      Y 朝畫面下方
+    -->
+    <origin xyz="0 0 0"
+            rpy="-1.5707963 0 -1.5707963"/>
+  </joint>
+
+
+  <!-- Gazebo RGB 相機感測器 -->
+  <gazebo reference="camera_link">
+
+    <material>Gazebo/Grey</material>
+
+    <sensor type="camera" name="front_camera_sensor">
+
+      <pose>0 0 0 0 0 0</pose>
+
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>30.0</update_rate>
+
+      <camera name="front_camera">
+
+        <!-- 約 80 度水平視角 -->
+        <horizontal_fov>1.3962634</horizontal_fov>
+
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+
+        <clip>
+          <near>0.05</near>
+          <far>30.0</far>
+        </clip>
+
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.005</stddev>
+        </noise>
+
+      </camera>
+
+      <plugin name="gazebo_ros_camera"
+              filename="libgazebo_ros_camera.so">
+
+        <robotNamespace>/</robotNamespace>
+
+        <cameraName>front_camera</cameraName>
+
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+
+        <frameName>camera_optical_frame</frameName>
+
+        <updateRate>30.0</updateRate>
+
+        <distortionK1>0.0</distortionK1>
+        <distortionK2>0.0</distortionK2>
+        <distortionK3>0.0</distortionK3>
+        <distortionT1>0.0</distortionT1>
+        <distortionT2>0.0</distortionT2>
+
+      </plugin>
+
+    </sensor>
+
+  </gazebo>
+
+
+
+</robot>

@@ -1,0 +1,8 @@
+prefix=/ros_ws/install
+
+Name: ackermann_vehicle_navigation
+Description: Description of ackermann_vehicle_navigation
+Version: 0.0.0
+Cflags: 
+Libs: -L${prefix}/lib 
+Requires: 

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<package format="2">
+  <name>my_car_gazebo</name>
+  <version>0.0.1</version>
+  <description>Simple differential-drive robot with 2D LiDAR and RGB camera for ROS Noetic and Gazebo 11.</description>
+
+  <maintainer email="user@example.com">user</maintainer>
+  <license>MIT</license>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <depend>gazebo_ros</depend>
+  <depend>robot_state_publisher</depend>
+  <depend>sensor_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
+  <depend>urdf</depend>
+  <depend>xacro</depend>
+
+  <export>
+    <gazebo_ros gazebo_model_path="${prefix}"/>
+  </export>
+</package>
