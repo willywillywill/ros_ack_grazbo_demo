@@ -1,0 +1,35 @@
+joint_state_controller:
+  type: joint_state_controller/JointStateController
+  publish_rate: 50
+
+left_front_steering_controller:
+  type: position_controllers/JointPositionController
+  joint: left_front_steering_joint
+  pid:
+    p: 80.0
+    i: 0.0
+    d: 2.0
+
+right_front_steering_controller:
+  type: position_controllers/JointPositionController
+  joint: right_front_steering_joint
+  pid:
+    p: 80.0
+    i: 0.0
+    d: 2.0
+
+left_rear_wheel_controller:
+  type: velocity_controllers/JointVelocityController
+  joint: left_rear_wheel_joint
+  pid:
+    p: 10.0
+    i: 0.1
+    d: 0.0
+
+right_rear_wheel_controller:
+  type: velocity_controllers/JointVelocityController
+  joint: right_rear_wheel_joint
+  pid:
+    p: 10.0
+    i: 0.1
+    d: 0.0

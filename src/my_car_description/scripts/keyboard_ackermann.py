@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import math
 import select
@@ -7,50 +8,65 @@ import termios
 import tty
 
 import rospy
-import tf
-
-from sensor_msgs.msg import JointState
+from std_msgs.msg import Float64
 
 
 class KeyboardAckermann:
     def __init__(self):
         rospy.init_node("keyboard_ackermann")
 
-        # 車輛尺寸，需和 URDF 相同
+        # 車輛尺寸
         self.wheelbase = rospy.get_param("~wheelbase", 0.35)
         self.track_width = rospy.get_param("~track_width", 0.26)
         self.wheel_radius = rospy.get_param("~wheel_radius", 0.065)
 
-        # 控制參數
+        # 控制限制
         self.max_speed = rospy.get_param("~max_speed", 1.0)
         self.max_steering = rospy.get_param("~max_steering", 0.60)
 
         self.speed_step = rospy.get_param("~speed_step", 0.10)
         self.steering_step = rospy.get_param("~steering_step", 0.05)
 
-        # 車輛狀態
         self.speed = 0.0
         self.steering_angle = 0.0
 
-        self.x = 0.0
-        self.y = 0.0
-        self.yaw = 0.0
-
-        self.wheel_position = 0.0
-
-        self.last_time = rospy.Time.now()
-
-        self.joint_pub = rospy.Publisher(
-            "/joint_states",
-            JointState,
+        # 前輪轉向位置 controller
+        self.left_steering_pub = rospy.Publisher(
+            "/left_front_steering_controller/command",
+            Float64,
             queue_size=10
         )
 
-        self.tf_broadcaster = tf.TransformBroadcaster()
+        self.right_steering_pub = rospy.Publisher(
+            "/right_front_steering_controller/command",
+            Float64,
+            queue_size=10
+        )
+
+        # 後輪速度 controller
+        self.left_rear_wheel_pub = rospy.Publisher(
+            "/left_rear_wheel_controller/command",
+            Float64,
+            queue_size=10
+        )
+
+        self.right_rear_wheel_pub = rospy.Publisher(
+            "/right_rear_wheel_controller/command",
+            Float64,
+            queue_size=10
+        )
+
+        if not sys.stdin.isatty():
+            rospy.logfatal(
+                "此節點需要鍵盤終端，請使用 rosrun 在獨立終端執行"
+            )
+            raise RuntimeError("stdin is not a terminal")
 
         self.terminal_settings = termios.tcgetattr(sys.stdin)
 
-        rospy.loginfo("Ackermann keyboard controller started")
+        rospy.on_shutdown(self.stop_vehicle)
+
+        rospy.loginfo("Gazebo Ackermann keyboard controller started")
         self.print_help()
 
     @staticmethod
@@ -60,20 +76,20 @@ class KeyboardAckermann:
     def print_help(self):
         print(
             "\n"
-            "========== Ackermann 鍵盤控制 ==========\n"
+            "========== Gazebo Ackermann 控制 ==========\n"
             "W：增加前進速度\n"
             "S：增加後退速度\n"
             "A：向左轉\n"
             "D：向右轉\n"
             "X：方向盤回正\n"
-            "空白鍵：停止車輛\n"
-            "R：重設位置\n"
+            "空白鍵：停止\n"
             "Q：離開\n"
-            "========================================\n"
+            "H：顯示說明\n"
+            "===========================================\n"
         )
 
     def read_key(self):
-        readable, _, _ = select.select([sys.stdin], [], [], 0.0)
+        readable, _, _ = select.select([sys.stdin], [], [], 0.05)
 
         if readable:
             return sys.stdin.read(1).lower()
@@ -99,15 +115,6 @@ class KeyboardAckermann:
         elif key == " ":
             self.speed = 0.0
 
-        elif key == "r":
-            self.speed = 0.0
-            self.steering_angle = 0.0
-
-            self.x = 0.0
-            self.y = 0.0
-            self.yaw = 0.0
-            self.wheel_position = 0.0
-
         elif key == "q":
             rospy.signal_shutdown("Keyboard quit")
 
@@ -128,7 +135,7 @@ class KeyboardAckermann:
 
         if key:
             print(
-                "\r速度：{:+.2f} m/s｜中央轉向角：{:+.1f}°       ".format(
+                "\r速度：{:+.2f} m/s｜轉向：{:+.1f}°          ".format(
                     self.speed,
                     math.degrees(self.steering_angle)
                 ),
@@ -137,106 +144,75 @@ class KeyboardAckermann:
             )
 
     def calculate_ackermann_angles(self):
-        """
-        根據中央虛擬轉向角，計算左右前輪角度。
-
-        正角度：左轉
-        負角度：右轉
-        """
-
-        if abs(self.steering_angle) < 1e-5:
+        if abs(self.steering_angle) < 1e-6:
             return 0.0, 0.0
 
-        turning_radius = self.wheelbase / math.tan(
-            self.steering_angle
+        turning_radius = (
+            self.wheelbase / math.tan(self.steering_angle)
         )
 
+        left_denominator = (
+            turning_radius - self.track_width / 2.0
+        )
+
+        right_denominator = (
+            turning_radius + self.track_width / 2.0
+        )
+
+        left_angle = math.atan2(
+            self.wheelbase,
+            left_denominator
+        )
+
+        right_angle = math.atan2(
+            self.wheelbase,
+            right_denominator
+        )
+
+        # atan2 在右轉時可能產生接近 pi 的角度，重新限制
         left_angle = math.atan(
-            self.wheelbase /
-            (turning_radius - self.track_width / 2.0)
+            self.wheelbase / left_denominator
         )
 
         right_angle = math.atan(
-            self.wheelbase /
-            (turning_radius + self.track_width / 2.0)
+            self.wheelbase / right_denominator
         )
 
         return left_angle, right_angle
 
-    def update_odometry(self, dt):
-        if abs(self.steering_angle) < 1e-5:
-            yaw_rate = 0.0
-        else:
-            yaw_rate = (
-                self.speed *
-                math.tan(self.steering_angle) /
-                self.wheelbase
-            )
-
-        self.x += self.speed * math.cos(self.yaw) * dt
-        self.y += self.speed * math.sin(self.yaw) * dt
-        self.yaw += yaw_rate * dt
-
-        # 將 yaw 保持在 -pi 到 pi
-        self.yaw = math.atan2(
-            math.sin(self.yaw),
-            math.cos(self.yaw)
-        )
-
-        wheel_speed = self.speed / self.wheel_radius
-        self.wheel_position += wheel_speed * dt
-
-    def publish_joint_states(self, stamp):
+    def publish_commands(self):
         left_steering, right_steering = (
             self.calculate_ackermann_angles()
         )
 
-        joint_msg = JointState()
-        joint_msg.header.stamp = stamp
-
-        joint_msg.name = [
-            "left_front_steering_joint",
-            "right_front_steering_joint",
-            "left_front_wheel_joint",
-            "right_front_wheel_joint",
-            "left_rear_wheel_joint",
-            "right_rear_wheel_joint",
-        ]
-
-        joint_msg.position = [
-            left_steering,
-            right_steering,
-            self.wheel_position,
-            self.wheel_position,
-            self.wheel_position,
-            self.wheel_position,
-        ]
-
-        joint_msg.velocity = [
-            0.0,
-            0.0,
-            self.speed / self.wheel_radius,
-            self.speed / self.wheel_radius,
-            self.speed / self.wheel_radius,
-            self.speed / self.wheel_radius,
-        ]
-
-        self.joint_pub.publish(joint_msg)
-
-    def publish_tf(self, stamp):
-        quaternion = tf.transformations.quaternion_from_euler(
-            0.0,
-            0.0,
-            self.yaw
+        wheel_angular_velocity = (
+            self.speed / self.wheel_radius
         )
 
-        self.tf_broadcaster.sendTransform(
-            (self.x, self.y, 0.0),
-            quaternion,
-            stamp,
-            "base_footprint",
-            "odom"
+        self.left_steering_pub.publish(
+            Float64(data=left_steering)
         )
+
+        self.right_steering_pub.publish(
+            Float64(data=right_steering)
+        )
+
+        self.left_rear_wheel_pub.publish(
+            Float64(data=wheel_angular_velocity)
+        )
+
+        self.right_rear_wheel_pub.publish(
+            Float64(data=wheel_angular_velocity)
+        )
+
+    def stop_vehicle(self):
+        try:
+            self.left_steering_pub.publish(Float64(data=0.0))
+            self.right_steering_pub.publish(Float64(data=0.0))
+            self.left_rear_wheel_pub.publish(Float64(data=0.0))
+            self.right_rear_wheel_pub.publish(Float64(data=0.0))
+        except rospy.ROSException:
+            pass
 
     def run(self):
         rate = rospy.Rate(30)
@@ -247,21 +223,12 @@ class KeyboardAckermann:
             while not rospy.is_shutdown():
                 key = self.read_key()
                 self.process_key(key)
-
-                now = rospy.Time.now()
-                dt = (now - self.last_time).to_sec()
-                self.last_time = now
-
-                if dt < 0.0 or dt > 0.5:
-                    dt = 0.0
-
-                self.update_odometry(dt)
-                self.publish_joint_states(now)
-                self.publish_tf(now)
-
+                self.publish_commands()
                 rate.sleep()
 
         finally:
+            self.stop_vehicle()
+
             termios.tcsetattr(
                 sys.stdin,
                 termios.TCSADRAIN,
@@ -273,8 +240,10 @@ class KeyboardAckermann:
 
 if __name__ == "__main__":
     try:
-        controller = KeyboardAckermann()
-        controller.run()
+        KeyboardAckermann().run()
 
     except rospy.ROSInterruptException:
         pass
+
+    except RuntimeError as error:
+        rospy.logerr(str(error))

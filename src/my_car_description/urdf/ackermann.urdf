@@ -763,13 +763,78 @@
         <distortionK3>0.0</distortionK3>
         <distortionT1>0.0</distortionT1>
         <distortionT2>0.0</distortionT2>
-
       </plugin>
-
     </sensor>
-
   </gazebo>
+    <!-- Gazebo ros_control -->
+    <gazebo>
+    <plugin name="gazebo_ros_control"
+            filename="libgazebo_ros_control.so">
+        <robotNamespace>/</robotNamespace>
+    </plugin>
+    </gazebo>
+    <transmission name="left_front_steering_transmission">
+  <type>transmission_interface/SimpleTransmission</type>
 
+  <joint name="left_front_steering_joint">
+    <hardwareInterface>
+      hardware_interface/PositionJointInterface
+    </hardwareInterface>
+  </joint>
 
+  <actuator name="left_front_steering_motor">
+    <hardwareInterface>
+      hardware_interface/PositionJointInterface
+    </hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+<transmission name="right_front_steering_transmission">
+  <type>transmission_interface/SimpleTransmission</type>
 
+  <joint name="right_front_steering_joint">
+    <hardwareInterface>
+      hardware_interface/PositionJointInterface
+    </hardwareInterface>
+  </joint>
+
+  <actuator name="right_front_steering_motor">
+    <hardwareInterface>
+      hardware_interface/PositionJointInterface
+    </hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+<transmission name="left_rear_wheel_transmission">
+  <type>transmission_interface/SimpleTransmission</type>
+
+  <joint name="left_rear_wheel_joint">
+    <hardwareInterface>
+      hardware_interface/VelocityJointInterface
+    </hardwareInterface>
+  </joint>
+
+  <actuator name="left_rear_wheel_motor">
+    <hardwareInterface>
+      hardware_interface/VelocityJointInterface
+    </hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
+<transmission name="right_rear_wheel_transmission">
+  <type>transmission_interface/SimpleTransmission</type>
+
+  <joint name="right_rear_wheel_joint">
+    <hardwareInterface>
+      hardware_interface/VelocityJointInterface
+    </hardwareInterface>
+  </joint>
+
+  <actuator name="right_rear_wheel_motor">
+    <hardwareInterface>
+      hardware_interface/VelocityJointInterface
+    </hardwareInterface>
+    <mechanicalReduction>1</mechanicalReduction>
+  </actuator>
+</transmission>
 </robot>
