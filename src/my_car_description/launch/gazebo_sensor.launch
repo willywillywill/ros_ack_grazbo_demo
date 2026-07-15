@@ -16,6 +16,23 @@
     <param name="robot_description"
         textfile="$(arg model)"/>
 
+        <!-- 載入 controller 設定 -->
+    <rosparam command="load"
+            file="$(find my_car_description)/config/controllers.yaml"/>
+
+    <!-- 啟動 controllers -->
+    <node pkg="controller_manager"
+        type="spawner"
+        name="controller_spawner"
+        output="screen"
+        args="
+            joint_state_controller
+            left_front_steering_controller
+            right_front_steering_controller
+            left_rear_wheel_controller
+            right_rear_wheel_controller
+        "/>
+
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
         <arg name="world_name" value="$(arg world)"/>
         <arg name="gui" value="$(arg gui)"/>
@@ -33,6 +50,25 @@
                 -x 0
                 -y 0
                 -z 0.15"/>
+    
+    <node pkg="my_car_description"
+        type="gazebo_odom.py"
+        name="gazebo_odom_publisher"
+        output="screen">
+
+        <param name="model_name" value="my_car_ackermann"/>
+
+        <param name="odom_topic" value="/odom"/>
+        <param name="odom_frame" value="odom"/>
+        <param name="base_frame" value="base_footprint"/>
+
+        <!-- 系統內只能有一個節點發布這組 TF -->
+        <param name="publish_tf" value="true"/>
+
+        <!-- 將車子生成時的位置設為 odom 原點 -->
+        <param name="reset_origin" value="true"/>
+
+    </node>
 
     <!-- 全部系統只啟動這一個 -->
     <node pkg="robot_state_publisher"
@@ -40,10 +76,13 @@
           name="robot_state_publisher"
           output="screen"/>
 
+    <!--
     <node pkg="rviz"
           type="rviz"
           name="rviz"
           args="-d $(find my_car_description)/rviz/car.rviz"
           output="screen"/>
+    -->
+
 
 </launch>

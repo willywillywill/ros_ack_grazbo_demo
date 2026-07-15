@@ -1,0 +1,70 @@
+<launch>
+    <!-- Topic -->
+    <arg name="scan_topic" default="/scan"/>
+    <arg name="odom_topic" default="/odom"/>
+    <arg name="map_topic" default="/map"/>
+
+    <!-- TF -->
+    <arg name="map_frame" default="map"/>
+    <arg name="odom_frame" default="odom"/>
+    <arg name="base_frame" default="base_footprint"/>
+    <arg name="laser_frame" default="laser"/>
+
+    <!-- 車輛在地圖中的初始位置 -->
+    <arg name="initial_x" default="0.0"/>
+    <arg name="initial_y" default="0.0"/>
+
+    <!-- 注意：ALS 的 yaw 單位是角度，不是弧度 -->
+    <arg name="initial_yaw" default="0.0"/>
+
+    <!-- Advanced Localization System -->
+    <include file="$(find als_ros)/launch/mcl.launch">
+
+        <!-- 輸入 topic -->
+        <arg name="scan_name" value="$(arg scan_topic)"/>
+        <arg name="odom_name" value="$(arg odom_topic)"/>
+        <arg name="map_name" value="$(arg map_topic)"/>
+
+        <!-- TF 名稱 -->
+        <arg name="laser_frame" value="$(arg laser_frame)"/>
+        <arg name="base_link_frame" value="$(arg base_frame)"/>
+        <arg name="map_frame" value="$(arg map_frame)"/>
+        <arg name="odom_frame" value="$(arg odom_frame)"/>
+
+        <!-- ALS 發布 map → odom -->
+        <arg name="broadcast_tf" value="true"/>
+
+        <!-- 目前 Gazebo 有 odom → base_footprint -->
+        <arg name="use_odom_tf" value="true"/>
+
+        <!-- 初始位置 -->
+        <arg name="initial_pose_x" value="$(arg initial_x)"/>
+        <arg name="initial_pose_y" value="$(arg initial_y)"/>
+        <arg name="initial_pose_yaw" value="$(arg initial_yaw)"/>
+
+        <!-- 初始粒子散布範圍 -->
+        <arg name="initial_noise_x" value="0.05"/>
+        <arg name="initial_noise_y" value="0.05"/>
+        <arg name="initial_noise_yaw" value="0.03"/>
+
+        <!-- ALS 推薦的 class conditional measurement model -->
+        <arg name="measurement_model_type" value="2"/>
+
+        <!-- 測試先使用 500，效能足夠再提高 -->
+        <arg name="particle_num" value="500"/>
+
+        <!-- 720 點雷達每 5 點使用一點 -->
+        <arg name="scan_step" value="5"/>
+
+        <!-- 定位更新頻率 -->
+        <arg name="localization_hz" value="10.0"/>
+
+        <!-- 避免每次測試寫入文字檔 -->
+        <arg name="write_pose" value="false"/>
+
+        <!-- 初步測試先不開進階全域重定位 -->
+        <arg name="use_gl_pose_sampler" value="false"/>
+        <arg name="use_mrf_failure_detector" value="false"/>
+
+    </include>
+</launch>
