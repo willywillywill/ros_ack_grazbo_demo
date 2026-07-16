@@ -767,28 +767,29 @@
     </sensor>
   </gazebo>
     <!-- Gazebo ros_control -->
-    <gazebo>
+  <gazebo>
     <plugin name="gazebo_ros_control"
             filename="libgazebo_ros_control.so">
         <robotNamespace>/</robotNamespace>
     </plugin>
-    </gazebo>
-    <transmission name="left_front_steering_transmission">
-  <type>transmission_interface/SimpleTransmission</type>
+  </gazebo>
+  <transmission name="left_front_steering_transmission">
+    <type>transmission_interface/SimpleTransmission</type>
 
-  <joint name="left_front_steering_joint">
-    <hardwareInterface>
-      hardware_interface/PositionJointInterface
-    </hardwareInterface>
-  </joint>
+    <joint name="left_front_steering_joint">
+      <hardwareInterface>
+        hardware_interface/PositionJointInterface
+      </hardwareInterface>
+    </joint>
 
-  <actuator name="left_front_steering_motor">
-    <hardwareInterface>
-      hardware_interface/PositionJointInterface
-    </hardwareInterface>
-    <mechanicalReduction>1</mechanicalReduction>
-  </actuator>
-</transmission>
+    <actuator name="left_front_steering_motor">
+      <hardwareInterface>
+        hardware_interface/PositionJointInterface
+      </hardwareInterface>
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+  </transmission>
+
 <transmission name="right_front_steering_transmission">
   <type>transmission_interface/SimpleTransmission</type>
 
@@ -821,6 +822,7 @@
     <mechanicalReduction>1</mechanicalReduction>
   </actuator>
 </transmission>
+
 <transmission name="right_rear_wheel_transmission">
   <type>transmission_interface/SimpleTransmission</type>
 
